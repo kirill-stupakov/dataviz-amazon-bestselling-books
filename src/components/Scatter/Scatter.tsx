@@ -1,5 +1,14 @@
-import React, { useState } from "react";
-import { scaleLinear, scaleSqrt, scaleLog, scaleOrdinal, extent } from "d3";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  scaleLinear,
+  scaleSqrt,
+  scaleLog,
+  scaleOrdinal,
+  extent,
+  axisBottom,
+  axisLeft,
+  select,
+} from "d3";
 
 import "./Scatter.scss";
 
@@ -18,83 +27,85 @@ interface Props {
 }
 
 const Scatter: React.FC<Props> = ({ data }) => {
-  const [chosenBook, setChosenBook] = useState<number | null>(null);
+  const [selectedBook, setSelectedBook] = useState<number | null>(null);
+  const ref = useRef<SVGSVGElement>(null);
 
-  const width = 1440;
-  const height = 900;
+  const width = 1000;
+  const height = 600;
   const margin = { top: 50, bottom: 50, right: 150, left: 50 };
 
-  const xScale = scaleLinear()
+  const { author, genre, name, price, reviews, rating, year } =
+    data[selectedBook || 0];
+
+  const xScale = scaleSqrt()
     // @ts-ignore
     .domain(extent(data, (d) => d.price))
-    .range([margin.left, width - margin.right]);
+    .range([margin.left, width - margin.right])
+    .nice();
 
   const yScale = scaleLog()
     // @ts-ignore
     .domain(extent(data, (d) => d.reviews))
-    .range([height - margin.bottom, margin.top]);
+    .range([height - margin.bottom, margin.top])
+    .nice();
 
-  const radiusScale = scaleSqrt()
+  const radiusScale = scaleLinear()
     // @ts-ignore
     .domain(extent(data, (d) => d.rating))
-    .range([10, 20]);
+    .range([3, 10]);
 
   const genres = Array.from(new Set(data.map((d) => d.genre)));
   const colorScale = scaleOrdinal()
     .domain(genres)
-    .range(["#2a9d8f25", "#f4a26125"]);
+    .range(["#2a9d8f", "#f4a261"]);
+
+  const axisGenerator = axisBottom(xScale);
 
   return (
-    <svg width={width} height={height} className="scatter">
+    <svg ref={ref} width={width} height={height} className="scatter">
       {data.map((d, index) => (
         <circle
           key={index}
-          onMouseEnter={() => setChosenBook(index)}
-          onMouseLeave={() => setChosenBook(null)}
+          onMouseEnter={() => setSelectedBook(index)}
+          onMouseLeave={() => setSelectedBook(null)}
           r={radiusScale(d.rating)}
           cx={xScale(d.price)}
           cy={yScale(d.reviews)}
           // @ts-ignore
           fill={colorScale(d.genre)}
-          stroke="#264653"
-          strokeWidth={1.5}
-          strokeOpacity={index === chosenBook ? 1 : 0}
+          fillOpacity={selectedBook === null ? 0.3 : 0.15}
         />
       ))}
-      {chosenBook !== null && (
-        <>
-          <text
-            x={
-              xScale(data[chosenBook].price) +
-              radiusScale(data[chosenBook].rating + 1)
-            }
-            y={yScale(data[chosenBook].reviews) - 15}
+
+      {selectedBook !== null && (
+        <g transform={`translate(${xScale(price)}, ${yScale(reviews)})`}>
+          <circle
+            className="label-circle"
+            r={radiusScale(rating)}
+            // @ts-ignore
+            fill={colorScale(genre)}
+            stroke="#264653"
+            strokeWidth={1.5}
+          />
+          <g
+            transform={`translate(${radiusScale(rating) + 10}, 0)`}
+            fill="#264653"
           >
-            {data[chosenBook].author}
-          </text>
-          <text
-            x={
-              xScale(data[chosenBook].price) +
-              radiusScale(data[chosenBook].rating + 1)
-            }
-            y={yScale(data[chosenBook].reviews) + 5}
-          >
-            {`"${
-              data[chosenBook].name.split(" ").length < 5
-                ? data[chosenBook].name
-                : data[chosenBook].name.split(" ").slice(0, 5).join(" ") + "..."
-            }"`}
-          </text>
-          <text
-            x={
-              xScale(data[chosenBook].price) +
-              radiusScale(data[chosenBook].rating + 1)
-            }
-            y={yScale(data[chosenBook].reviews) + 25}
-          >
-            {data[chosenBook].year}
-          </text>
-        </>
+            <text y={-15}>
+              {author}, {genre}
+            </text>
+            <text y={5}>
+              {`"${
+                name.split(" ").length < 6
+                  ? name
+                  : name.split(" ").slice(0, 5).join(" ") + "..."
+              }"`}
+            </text>
+            <text y={25}>
+              {year}, {rating}★
+            </text>
+          </g>
+        </g>
       )}
     </svg>
   );
