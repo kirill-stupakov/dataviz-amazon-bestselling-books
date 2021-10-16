@@ -1,26 +1,42 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import { csv } from "d3";
+
+import Chart from "./components/Chart/Chart";
+import "./App.scss";
+
+type data = {
+  author: string;
+  genre: string;
+  name: string;
+  price: number;
+  reviews: number;
+  rating: number;
+  year: number;
+}[];
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+  const [data, setData] = useState<data | null>(null);
+  const datasetUrl =
+    "https://gist.githubusercontent.com/kirill-stupakov/66c89bf52d9d2eb67ad4820d29e8dd75/raw/bestsellers_with_categories.csv";
+
+  useEffect(() => {
+    csv(datasetUrl)
+      .then((res) =>
+        res.map((entry) => ({
+          author: entry.Author!,
+          genre: entry.Genre!,
+          name: entry.Name!,
+          price: +entry.Price!,
+          reviews: +entry.Reviews!,
+          rating: +entry["User Rating"]!,
+          year: +entry.Year!,
+        }))
+      )
+      // @ts-ignore
+      .then(setData);
+  }, []);
+
+  return <div className="App">{data && <Chart data={data}></Chart>}</div>;
 }
 
 export default App;
