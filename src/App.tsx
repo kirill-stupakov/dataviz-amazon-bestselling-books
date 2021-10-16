@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { csv } from "d3";
 
-import Chart from "./components/Chart/Chart";
+import Scatter from "./components/Scatter/Scatter";
 import "./App.scss";
 
 type data = {
@@ -36,7 +36,7 @@ function App() {
       .then(setData);
   }, []);
 
-  return <div className="App">{data && <Chart data={data}></Chart>}</div>;
+  return <div className="App">{data && <Scatter data={data}></Scatter>}</div>;
 }
 
 export default App;

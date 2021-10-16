@@ -1,0 +1,11 @@
+.scatter {
+  circle {
+    transition: 0.3s;
+    cursor: pointer;
+    mix-blend-mode: overlay;
+  }
+
+  text {
+    color: black;
+  }
+}
